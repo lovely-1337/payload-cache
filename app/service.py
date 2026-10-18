@@ -3,11 +3,15 @@ import json
 from collections.abc import Callable, Iterable
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
-from app.models import Payload, TransformedString  # TransformedString уже импортирован, просто допиши Payload
+from app.models import (  # TransformedString уже импортирован, просто допиши Payload
+    Payload,
+    TransformedString,
+)
 from app.schemas import PayloadRequest
+
 
 def compute_input_hash(list_1: list[str], list_2: list[str]) -> str:
     # Хэш служит ключом для переиспользования id. Порядок списков важен:
@@ -22,6 +26,7 @@ def interleave(list_1: list[str], list_2: list[str]) -> list[str]:
     # Чередуем элементы: a1, b1, a2, b2, ...
     # Одинаковую длину гарантирует валидация в схеме, поэтому zip ничего не потеряет.
     return [item for pair in zip(list_1, list_2) for item in pair]
+
 
 def get_transformed(
     session: Session,
@@ -46,6 +51,7 @@ def get_transformed(
 
     session.flush()
     return result
+
 
 def create_payload(
     session: Session,

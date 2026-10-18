@@ -1,5 +1,6 @@
-from pydantic import AliasChoices, BaseModel, Field, model_validator
 from typing import Self
+
+from pydantic import AliasChoices, BaseModel, Field, model_validator
 
 
 class CliSettings(BaseModel):

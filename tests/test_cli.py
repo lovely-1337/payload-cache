@@ -21,6 +21,7 @@ def mock_client(handler) -> httpx.Client:
 
 # --- разбор аргументов ---
 
+
 def test_defaults():
     settings = make_settings("-j", "{}")
 
@@ -54,6 +55,7 @@ def test_repeat_must_be_positive(value):
 
 
 # --- чтение входа и запись результата ---
+
 
 def test_read_input_from_json_argument():
     assert read_input(make_settings("-j", '{"x": 1}')) == '{"x": 1}'
@@ -90,6 +92,7 @@ def test_write_output_to_stdout(capsys):
 
 # --- run() с подменённым сервером ---
 
+
 def test_run_posts_then_gets_and_repeats():
     requests: list[tuple[str, str]] = []
 
@@ -105,8 +108,10 @@ def test_run_posts_then_gets_and_repeats():
 
     assert outputs == ["A, B", "A, B"]
     assert requests == [
-        ("POST", "/payload"), ("GET", "/payload/7"),
-        ("POST", "/payload"), ("GET", "/payload/7"),
+        ("POST", "/payload"),
+        ("GET", "/payload/7"),
+        ("POST", "/payload"),
+        ("GET", "/payload/7"),
     ]
 
 
@@ -132,6 +137,7 @@ def test_run_raises_on_server_error():
 
 
 # --- CLI против настоящего приложения ---
+
 
 def test_run_against_real_app(client):
     # client - фикстура из conftest: приложение с in-memory БД и фейковым transformer.

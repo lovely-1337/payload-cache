@@ -33,7 +33,9 @@ def test_partial_overlap_transforms_only_new_strings(client, transformer):
     client.post("/payload", json={"list_1": ["a", "b"], "list_2": ["c", "d"]})
     transformer.calls.clear()
 
-    response = client.post("/payload", json={"list_1": ["a", "x"], "list_2": ["c", "y"]})
+    response = client.post(
+        "/payload", json={"list_1": ["a", "x"], "list_2": ["c", "y"]}
+    )
 
     assert response.status_code == 201
     # "a" и "c" уже в кэше, трансформируются только новые "x" и "y".

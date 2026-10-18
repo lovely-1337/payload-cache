@@ -1,15 +1,13 @@
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
-from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from app.db import get_session
 from app.main import app
-from app.transformer import get_transformer
-
 from app.models import Base
+from app.transformer import get_transformer
 
 
 class CountingTransformer:
@@ -47,6 +45,7 @@ def session(engine):
 @pytest.fixture
 def transformer() -> CountingTransformer:
     return CountingTransformer()
+
 
 @pytest.fixture
 def client(engine, transformer):
