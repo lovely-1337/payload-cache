@@ -4,8 +4,10 @@ from collections.abc import Callable, Iterable
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
-from app.models import TransformedString
+from app.models import Payload, TransformedString  # TransformedString уже импортирован, просто допиши Payload
+from app.schemas import PayloadRequest
 
 def compute_input_hash(list_1: list[str], list_2: list[str]) -> str:
     # Хэш служит ключом для переиспользования id. Порядок списков важен:
@@ -44,3 +46,48 @@ def get_transformed(
 
     session.flush()
     return result
+
+def create_payload(
+    session: Session,
+    request: PayloadRequest,
+    transform: Callable[[str], str],
+) -> tuple[Payload, bool]:
+    """Возвращает (payload, created). created=False значит, что id переиспользован."""
+    input_hash = compute_input_hash(request.list_1, request.list_2)
+
+    # Уровень 2: такой вход уже обрабатывали, transformer не нужен вообще.
+    existing = _find_by_hash(session, input_hash)
+    if existing is not None:
+        return existing, False
+
+    # Уровень 1: трансформируем только то, чего нет в кэше строк.
+    transformed = get_transformed(
+        session, [*request.list_1, *request.list_2], transform
+    )
+    left = [transformed[s] for s in request.list_1]
+    right = [transformed[s] for s in request.list_2]
+    output = ", ".join(interleave(left, right))
+
+    payload = Payload(input_hash=input_hash, output=output)
+    session.add(payload)
+    try:
+        session.flush()
+    except IntegrityError:
+        # Гонка: параллельный запрос успел вставить такой же хэш раньше нас.
+        # Откатываем только нашу вставку и отдаём уже существующую запись.
+        session.rollback()
+        existing = _find_by_hash(session, input_hash)
+        if existing is None:
+            raise
+        return existing, False
+    return payload, True
+
+
+def get_payload(session: Session, payload_id: int) -> Payload | None:
+    return session.get(Payload, payload_id)
+
+
+def _find_by_hash(session: Session, input_hash: str) -> Payload | None:
+    return session.execute(
+        select(Payload).where(Payload.input_hash == input_hash)
+    ).scalar_one_or_none()
