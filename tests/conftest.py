@@ -1,3 +1,4 @@
+import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -31,6 +32,17 @@ def engine():
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
+    Base.metadata.create_all(engine)
+    yield engine
+    engine.dispose()
+
+@pytest.fixture
+def race_engine():
+    url = os.environ.get("TEST_DATABASE_URL")
+    if not url:
+        pytest.skip("TEST_DATABASE_URL is not set")
+    engine = create_engine(url)
+    Base.metadata.drop_all(engine)    # чистое состояние перед тестом
     Base.metadata.create_all(engine)
     yield engine
     engine.dispose()
@@ -69,3 +81,9 @@ def client(engine, transformer):
     yield TestClient(app)
 
     app.dependency_overrides.clear()
+
+
+
+@pytest.fixture
+def session_factory(race_engine):
+    return sessionmaker(bind=race_engine, expire_on_commit=False)
